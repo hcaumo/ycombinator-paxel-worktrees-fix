@@ -33,6 +33,20 @@ The fix: enumerate **live** worktrees with `git worktree list`, skip the ones
 with no sessions, and run Paxel single-repo mode inside each remaining one — one
 upload per worktree. That's exactly what the skill and the helper script do.
 
+### Also fixes: the silent headless-extraction hang
+
+When Paxel runs **non-interactively** (backgrounded by an agent, no controlling
+TTY), its session-**extraction** phase can hang **silently** — no Docker
+container, no output, no error, indefinitely. We saw a run wedge for ~1 hour;
+the culprits were the **Gemini** extractor and the deleted-cwd **orphan-recovery**
+git walk (a PTY does not fix it). So `upload-worktrees.sh` runs every upload
+under a **stall watchdog** (frozen log + no `paxel` container ⇒ kill) and
+auto-retries once with the extra-tool extractors disabled
+(`PAXEL_NO_ORPHAN_RECOVERY=1`, `GEMINI_DIR`/`OPENCODE_DIR`/`CURSOR_DIR` →
+`/nonexistent`), which keeps Claude Code + Codex sessions and drops only
+Cursor/opencode/Gemini for that worktree. Pass `--skip-extra-tools` to start in
+that mode and skip the probe.
+
 ## Install
 
 ### Option A — the skill (agent-driven)

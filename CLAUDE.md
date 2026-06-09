@@ -38,6 +38,15 @@ skills/paxel-upload-worktrees/upload-worktrees.sh --dry-run  # preview, upload n
   is missing/expired, surface the sign-in URL instead of letting the run hang.
 - **Long runs:** a busy worktree takes 15–30 min. Run in the background and report
   as each finishes; watch for an auth-needed URL or a "Docker not running" error.
+- **Headless-hang guard (important).** Run non-interactively (backgrounded, no
+  TTY), Paxel's session-**extraction** phase can hang **silently** — no container,
+  no output, no error (seen: the Gemini extractor and the deleted-cwd
+  orphan-recovery git walk; a PTY does NOT fix it). Never fire-and-forget
+  `curl … | bash`. Run each upload under a **stall watchdog** — *log frozen AND no
+  `paxel` container running ⇒ kill* — and retry with the extractors disabled:
+  `PAXEL_NO_ORPHAN_RECOVERY=1 GEMINI_DIR=/nonexistent OPENCODE_DIR=/nonexistent
+  CURSOR_DIR=/nonexistent` (keeps Claude Code + Codex, drops only
+  Cursor/opencode/Gemini). The bundled `upload-worktrees.sh` already does this.
 
 ## What leaves the machine
 
